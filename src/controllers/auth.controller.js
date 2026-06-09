@@ -41,6 +41,24 @@ exports.logout = (req, res) => {
   }
 };
 
+/** PATCH /api/auth/password — change le mot de passe de l'utilisateur connecte */
+exports.changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    if (!currentPassword || !newPassword)
+      return res.status(400).json({ message: 'Mot de passe actuel et nouveau mot de passe requis.' });
+    if (newPassword.length < 4)
+      return res.status(400).json({ message: 'Le nouveau mot de passe doit contenir au moins 4 caracteres.' });
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ message: 'Utilisateur introuvable.' });
+    const valid = await user.comparePassword(currentPassword);
+    if (!valid) return res.status(401).json({ message: 'Mot de passe actuel incorrect.' });
+    user.password = newPassword;
+    await user.save();
+    res.json({ message: 'Mot de passe modifie avec succes.' });
+  } catch (err) { res.status(500).json({ message: err.message }); }
+};
+
 /** GET /api/auth/me — retourne le profil de l'utilisateur connecté */
 exports.me = async (req, res) => {
   try {
