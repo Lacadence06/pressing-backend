@@ -24,12 +24,12 @@ exports.getOne=async(req,res)=>{
 };
 exports.create=async(req,res)=>{
   try{
-    const{nomClient,telephoneClient,articles,notes}=req.body;
+    const{nomClient,telephoneClient,emailClient,adresseClient,articles,notes}=req.body;
     if(!nomClient||!articles||!articles.length)
       return res.status(400).json({message:'nomClient et articles requis.'});
     const yr=new Date().getFullYear();
     let client=await Client.findOne({nom:{$regex:new RegExp('^'+nomClient.trim()+'$','i')}});
-    if(!client)client=await Client.create({nom:nomClient.trim(),telephone:telephoneClient||undefined,gerantId:req.user.id});
+    if(!client)client=await Client.create({nom:nomClient.trim(),telephone:telephoneClient||undefined,email:emailClient||undefined,adresse:adresseClient||undefined,gerantId:req.user.id});
     const total=articles.reduce((s,a)=>s+(a.quantite*a.prixUnitaire),0);
     const numCmd=await nextNumero(Commande,'numeroCommande','CMD-'+yr+'-');
     const today=new Date().toISOString().split('T')[0];
