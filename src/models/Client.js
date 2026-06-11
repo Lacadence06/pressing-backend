@@ -3,7 +3,8 @@ const { Schema, model } = require('mongoose');
 const ClientSchema = new Schema({
   nom:       { type: String, required: true, trim: true },
   telephone: { type: String, trim: true },
-  email:     { type: String, trim: true, lowercase: true },
+  email:     { type: String, trim: true, lowercase: true,
+               match: [/^[^\s@]+@[^\s@]+\.[^\s@]+$/, 'Email invalide'] },
   adresse:   { type: String, trim: true },
   gerantId:  { type: Schema.Types.ObjectId, ref: 'User', required: true },
 }, { timestamps: true });

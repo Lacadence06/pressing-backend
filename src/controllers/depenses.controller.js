@@ -20,6 +20,21 @@ exports.create=async(req,res)=>{
     res.status(201).json(dep);
   }catch(e){res.status(500).json({message:e.message});}
 };
+exports.update=async(req,res)=>{
+  try{
+    const{nom,categorie,quantite,prix,date}=req.body;
+    const dep=await Depense.findById(req.params.id);
+    if(!dep)return res.status(404).json({message:'Depense introuvable.'});
+    if(nom!==undefined)dep.nom=nom.trim();
+    if(categorie!==undefined)dep.categorie=categorie;
+    if(quantite!==undefined)dep.quantite=parseInt(quantite,10)||dep.quantite;
+    if(prix!==undefined)dep.prix=parseFloat(prix)||dep.prix;
+    if(date!==undefined)dep.date=date;
+    dep.total=dep.quantite*dep.prix;
+    await dep.save();
+    res.json(dep);
+  }catch(e){res.status(500).json({message:e.message});}
+};
 exports.remove=async(req,res)=>{
   try{
     await Depense.findByIdAndDelete(req.params.id);

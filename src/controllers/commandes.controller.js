@@ -11,7 +11,14 @@ async function nextNumero(Model,field,pre){
 exports.getAll=async(req,res)=>{
   try{
     const f=req.user.role==='admin'?{}:{gerantId:req.user.id};
-    const list=await Commande.find(f).sort({createdAt:-1});
+    // M3 : pagination OPTIONNELLE. Sans ?page, retourne tout (retrocompatible).
+    const q=Commande.find(f).sort({createdAt:-1});
+    if(req.query.page){
+      const page=Math.max(1,parseInt(req.query.page,10)||1);
+      const limit=Math.min(200,Math.max(1,parseInt(req.query.limit,10)||50));
+      q.skip((page-1)*limit).limit(limit);
+    }
+    const list=await q;
     res.json(list);
   }catch(e){res.status(500).json({message:e.message});}
 };
@@ -67,6 +74,8 @@ exports.updateStatut=async(req,res)=>{
 };
 exports.remove=async(req,res)=>{
   try{
+    // M5 : cascade — supprimer les factures liees pour eviter les orphelines.
+    await Facture.deleteMany({commandeId:req.params.id});
     await Commande.findByIdAndDelete(req.params.id);
     res.json({message:'Commande supprimee.'});
   }catch(e){res.status(500).json({message:e.message});}

@@ -1,18 +1,44 @@
 /**
- * Liste noire des tokens revoqués (stockage mémoire).
- * Purge automatique à chaque redémarrage du serveur.
- * Les tokens expirent naturellement via la durée JWT (JWT_EXPIRES_IN).
- * → Pour la production haute-disponibilite, remplacer par Redis.
+ * Liste noire des tokens revoqués — persistée en MongoDB (TTL auto-purge).
+ * C2 : survit aux redémarrages serveur (Render free tier).
+ * Cache mémoire en plus pour éviter une requête DB à chaque appel API.
  */
-const _blacklist = new Set();
+const jwt = require('jsonwebtoken');
+const RevokedToken = require('../models/RevokedToken');
 
-/** Ajoute un token à la liste noire (appele au logout). */
-function addToBlacklist(token) { if (token) _blacklist.add(token); }
+const _cache = new Set(); // cache lecture rapide
 
-/** Retourne true si le token a été révoqué. */
-function isBlacklisted(token) { return _blacklist.has(token); }
+/** Ajoute un token à la liste noire (appelé au logout). */
+async function addToBlacklist(token) {
+  if (!token) return;
+  _cache.add(token);
+  try {
+    const payload = jwt.decode(token);
+    const expireAt = payload && payload.exp
+      ? new Date(payload.exp * 1000)
+      : new Date(Date.now() + 7 * 24 * 3600 * 1000);
+    await RevokedToken.updateOne(
+      { token },
+      { $setOnInsert: { token, expireAt } },
+      { upsert: true }
+    );
+  } catch (e) {
+    console.warn('[blacklist] persist failed:', e.message);
+  }
+}
 
-/** Taille de la liste (utile pour le monitoring). */
-function size() { return _blacklist.size; }
+/** Retourne true si le token a été révoqué (cache puis DB). */
+async function isBlacklisted(token) {
+  if (_cache.has(token)) return true;
+  try {
+    const found = await RevokedToken.exists({ token });
+    if (found) _cache.add(token);
+    return !!found;
+  } catch {
+    return false; // en cas d'erreur DB, ne pas bloquer les utilisateurs légitimes
+  }
+}
+
+function size() { return _cache.size; }
 
 module.exports = { addToBlacklist, isBlacklisted, size };

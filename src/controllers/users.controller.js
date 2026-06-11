@@ -48,6 +48,9 @@ exports.toggleActif = async (req, res) => {
 /** DELETE /api/users/:id */
 exports.remove = async (req, res) => {
   try {
+    // M8 : un admin ne peut pas supprimer son propre compte.
+    if (req.params.id === String(req.user.id))
+      return res.status(403).json({ message: 'Impossible de supprimer son propre compte.' });
     await User.findByIdAndDelete(req.params.id);
     res.json({ message: 'Utilisateur supprimé.' });
   } catch (err) { res.status(500).json({ message: err.message }); }

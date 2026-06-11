@@ -11,12 +11,21 @@ const depensesRoutes  = require('./routes/depenses.routes');
 const app = express();
 
 // ─── CORS ─────────────────────────────────────────────────────────────────────
-// En production : definir ALLOWED_ORIGINS=https://mon-frontend.com,https://...
-// En dev ou mobile Expo : laisser * (toutes origines)
-const rawOrigins = (process.env.ALLOWED_ORIGINS || '*').split(',').map(o => o.trim());
-const corsOptions = rawOrigins.includes('*')
-  ? { origin: '*' }
-  : { origin: rawOrigins, credentials: true };
+// ALLOWED_ORIGINS = liste blanche d'origines web (séparées par virgule).
+// Les apps mobiles natives (Expo) n'envoient PAS d'en-tête Origin : elles sont
+// toujours autorisées. Seules les origines web sont filtrées.
+// Si ALLOWED_ORIGINS = "*" ou vide => toutes les origines sont acceptées.
+const rawOrigins = (process.env.ALLOWED_ORIGINS || '*').split(',').map(o => o.trim()).filter(Boolean);
+const allowAll = rawOrigins.includes('*') || rawOrigins.length === 0;
+const corsOptions = {
+  origin(origin, callback) {
+    // Pas d'origine = requete mobile native / Postman / serveur -> autoriser.
+    if (!origin) return callback(null, true);
+    if (allowAll || rawOrigins.includes(origin)) return callback(null, true);
+    return callback(new Error('Origine non autorisee par CORS.'));
+  },
+  credentials: true,
+};
 app.use(cors(corsOptions));
 
 // ─── Body parsers ─────────────────────────────────────────────────────────────

@@ -32,9 +32,9 @@ exports.login = async (req, res) => {
   * Révoque le token en l'ajoutant à la liste noire.
   * Le client doit supprimer le token de son stockage local.
   */
-exports.logout = (req, res) => {
+exports.logout = async (req, res) => {
   try {
-    addToBlacklist(req.token);
+    await addToBlacklist(req.token);
     res.json({ message: 'Deconnexion reussie.' });
   } catch (err) {
     res.status(500).json({ message: err.message });

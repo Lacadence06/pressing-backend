@@ -11,4 +11,8 @@ const FactureSchema = new Schema({
   createdBy:     { type: String },
 }, { timestamps: true });
 
+// I4 : index pour le filtrage par gerant et la jointure par commande.
+FactureSchema.index({ gerantId: 1, createdAt: -1 });
+FactureSchema.index({ commandeId: 1 });
+
 module.exports = model('Facture', FactureSchema);

@@ -37,4 +37,7 @@ const CommandeSchema = new Schema({
   history:       { type: [HistorySchema], default: [] },
 }, { timestamps: true });
 
+// I4 : index pour le filtrage rapide par gerant.
+CommandeSchema.index({ gerantId: 1, createdAt: -1 });
+
 module.exports = model('Commande', CommandeSchema);

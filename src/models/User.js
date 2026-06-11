@@ -4,7 +4,8 @@ const bcrypt = require('bcryptjs');
 const UserSchema = new Schema({
   prenom:    { type: String, required: true, trim: true },
   nom:       { type: String, required: true, trim: true },
-  email:     { type: String, required: true, unique: true, lowercase: true, trim: true },
+  email:     { type: String, required: true, unique: true, lowercase: true, trim: true,
+               match: [/^[^\s@]+@[^\s@]+\.[^\s@]+$/, 'Email invalide'] },
   password:  { type: String, required: true, minlength: 4 },
   telephone: { type: String, trim: true },
   role:      { type: String, enum: ['admin', 'gerant'], default: 'gerant' },

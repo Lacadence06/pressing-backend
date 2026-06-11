@@ -14,4 +14,7 @@ const DepenseSchema = new Schema({
   gerantId:  { type: Schema.Types.ObjectId, ref: 'User' },
 }, { timestamps: true });
 
+// I4 : index pour le filtrage par gerant et par date.
+DepenseSchema.index({ gerantId: 1, date: -1 });
+
 module.exports = model('Depense', DepenseSchema);
