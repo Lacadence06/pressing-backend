@@ -26,6 +26,9 @@ exports.getOne=async(req,res)=>{
   try{
     const c=await Commande.findById(req.params.id);
     if(!c)return res.status(404).json({message:'Commande introuvable.'});
+    // Gerant : ne peut consulter qu'une commande qu'il a creee.
+    if(req.user.role!=='admin' && String(c.gerantId)!==String(req.user.id))
+      return res.status(403).json({message:'Acces refuse : cette commande ne vous appartient pas.'});
     res.json(c);
   }catch(e){res.status(500).json({message:e.message});}
 };
@@ -65,6 +68,9 @@ exports.updateStatut=async(req,res)=>{
     const{statut,message}=req.body;
     const cmd=await Commande.findById(req.params.id);
     if(!cmd)return res.status(404).json({message:'Commande introuvable.'});
+    // Gerant : ne peut modifier qu'une commande qu'il a creee.
+    if(req.user.role!=='admin' && String(cmd.gerantId)!==String(req.user.id))
+      return res.status(403).json({message:'Acces refuse : cette commande ne vous appartient pas.'});
     const entry={from:cmd.statut,to:statut,at:new Date().toISOString(),
       byUserId:req.user.id,byUserName:req.user.email,
       message:message||('Passage a '+statut)};
@@ -74,6 +80,11 @@ exports.updateStatut=async(req,res)=>{
 };
 exports.remove=async(req,res)=>{
   try{
+    const cmd=await Commande.findById(req.params.id);
+    if(!cmd)return res.status(404).json({message:'Commande introuvable.'});
+    // Gerant : ne peut supprimer qu'une commande qu'il a creee.
+    if(req.user.role!=='admin' && String(cmd.gerantId)!==String(req.user.id))
+      return res.status(403).json({message:'Acces refuse : cette commande ne vous appartient pas.'});
     // M5 : cascade — supprimer les factures liees pour eviter les orphelines.
     await Facture.deleteMany({commandeId:req.params.id});
     await Commande.findByIdAndDelete(req.params.id);
