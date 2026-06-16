@@ -8,6 +8,28 @@ async function nextNumero(Model,field,pre){
   let n=1;if(last){const x=parseInt(last[field].replace(pre,''),10);if(!isNaN(x))n=x+1;}
   return pre+String(n).padStart(3,'0');
 }
+// ── RECHERCHE PUBLIQUE (sans auth) — landing page tracker ──────────────────
+exports.searchPublic=async(req,res)=>{
+  try{
+    const q=(req.query.q||'').trim();
+    if(!q||q.length<2) return res.status(400).json({message:'Paramètre q requis (min 2 caractères).'});
+    // Cherche par numéro exact (insensible casse) OU nom client (partiel)
+    const filtre={
+      $or:[
+        {numeroCommande:{$regex:'^'+q.replace(/[-[\]{}()*+?.,\\^$|#\s]/g,'\\$&')+'$',$options:'i'}},
+        {nomClient:{$regex:q.replace(/[-[\]{}()*+?.,\\^$|#\s]/g,'\\$&'),$options:'i'}},
+        {telephoneClient:{$regex:q.replace(/[-[\]{}()*+?.,\\^$|#\s]/g,'\\$&'),$options:'i'}},
+      ]
+    };
+    // Retourne max 10 résultats, champs non-sensibles uniquement
+    const results=await Commande.find(filtre)
+      .select('numeroCommande nomClient telephoneClient articles total statut date gerantNom history createdAt')
+      .sort({createdAt:-1})
+      .limit(10);
+    res.json(results);
+  }catch(e){res.status(500).json({message:e.message});}
+};
+
 exports.getAll=async(req,res)=>{
   try{
     const f=req.user.role==='admin'?{}:{gerantId:req.user.id};
